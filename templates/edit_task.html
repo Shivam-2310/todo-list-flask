@@ -5,7 +5,6 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
-        <!-- Breadcrumb -->
         <nav aria-label="breadcrumb" class="mb-4">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
@@ -17,7 +16,7 @@
             </ol>
         </nav>
         
-        <!-- Edit Task Form -->
+        <!-- TASK EDITOR INTERFACE -->
         <div class="card card-custom fade-in">
             <div class="card-header bg-transparent border-0">
                 <h3 class="card-title mb-0">
@@ -29,7 +28,6 @@
             <div class="card-body p-4">
                 <form method="POST" id="editTaskForm">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <!-- Task Title -->
                     <div class="mb-4">
                         <label for="title" class="form-label fw-semibold">
                             <i class="bi bi-card-text me-2"></i>Task Title
@@ -49,7 +47,6 @@
                         </div>
                     </div>
                     
-                    <!-- Task Description -->
                     <div class="mb-4">
                         <label for="description" class="form-label fw-semibold">
                             <i class="bi bi-file-text me-2"></i>Description (Optional)
@@ -66,7 +63,6 @@
                         </div>
                     </div>
                     
-                    <!-- Task Status -->
                     <div class="mb-4">
                         <label class="form-label fw-semibold">
                             <i class="bi bi-check-circle me-2"></i>Task Status
@@ -92,7 +88,6 @@
                         </div>
                     </div>
                     
-                    <!-- Task Metadata -->
                     <div class="mb-4">
                         <label class="form-label fw-semibold">
                             <i class="bi bi-info-circle me-2"></i>Task Information
@@ -115,7 +110,6 @@
                         </div>
                     </div>
                     
-                    <!-- Action Buttons -->
                     <div class="d-flex gap-2 flex-wrap">
                         <button type="submit" class="btn btn-custom-primary">
                             <i class="bi bi-check-lg me-2"></i>
@@ -150,7 +144,7 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
+<!-- TASK DELETION MODAL -->
 <div class="modal fade" id="deleteTaskModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -189,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveButtonText = document.getElementById('saveButtonText');
     const saveButtonSpinner = document.getElementById('saveButtonSpinner');
     
-    // Character counter for task title
+    // CHARACTER COUNTER FOR TASK TITLE
     titleInput.addEventListener('input', function() {
         const length = this.value.length;
         titleCounter.textContent = length;
@@ -203,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Character counter for description
+    // CHARACTER COUNTER FOR DESCRIPTION
     descriptionTextarea.addEventListener('input', function() {
         const length = this.value.length;
         descriptionCounter.textContent = length;
@@ -217,18 +211,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Auto-resize textarea
+    // AUTO-RESIZE TEXTAREA
     function autoResize() {
         descriptionTextarea.style.height = 'auto';
         descriptionTextarea.style.height = descriptionTextarea.scrollHeight + 'px';
     }
     
-    // Initial resize
+    // INITIAL RESIZE
     autoResize();
     
     descriptionTextarea.addEventListener('input', autoResize);
     
-    // Form submission handler
+    // FORM SUBMISSION HANDLER
     editTaskForm.addEventListener('submit', function(e) {
         const title = titleInput.value.trim();
         
@@ -240,27 +234,27 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Show loading state
+        // SHOW LOADING STATE
         saveButton.disabled = true;
         saveButtonText.textContent = 'Saving...';
         saveButtonSpinner.classList.remove('d-none');
     });
     
-    // Keyboard shortcuts
+    // KEYBOARD SHORTCUTS
     document.addEventListener('keydown', function(e) {
-        // Ctrl+S to save
+        // CTRL+S TO SAVE
         if (e.ctrlKey && e.key === 's') {
             e.preventDefault();
             editTaskForm.submit();
         }
         
-        // Escape to cancel
+        // ESCAPE TO CANCEL
         if (e.key === 'Escape') {
             window.location.href = "{{ url_for('dashboard') }}";
         }
     });
     
-    // Warn before leaving with unsaved changes
+    // WARN BEFORE LEAVING WITH UNSAVED CHANGES
     let formChanged = false;
     const originalTitle = "{{ task.title }}";
     const originalDescription = "{{ task.description or '' }}";
@@ -283,12 +277,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Don't show warning when form is submitted
+    // DON'T SHOW WARNING WHEN FORM IS SUBMITTED
     editTaskForm.addEventListener('submit', function() {
         formChanged = false;
     });
     
-    // Focus title input and select text for easy editing
+    // FOCUS TITLE INPUT AND SELECT TEXT FOR EASY EDITING
     titleInput.focus();
     titleInput.select();
 });

@@ -6,7 +6,7 @@ from datetime import datetime, timezone, timedelta
 import os
 import re
 
-# IST timezone (UTC+5:30)
+# IST TIMEZONE CONFIGURATION FOR INDIAN USERS
 IST = timezone(timedelta(hours=5, minutes=30))
 
 def convert_utc_to_ist(utc_datetime):
@@ -14,42 +14,38 @@ def convert_utc_to_ist(utc_datetime):
     if utc_datetime is None:
         return None
     
-    # If no timezone info, assume it's UTC
+    # HANDLE NAIVE DATETIME OBJECTS BY ASSUMING UTC
     if utc_datetime.tzinfo is None:
         utc_datetime = utc_datetime.replace(tzinfo=timezone.utc)
     
-    # Convert to IST
     ist_datetime = utc_datetime.astimezone(IST)
     return ist_datetime
 
 app = Flask(__name__)
 
-# Configuration
+# FLASK APPLICATION CONFIGURATION
 app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
-app.config['WTF_CSRF_TIME_LIMIT'] = None  # No time limit for project
+app.config['WTF_CSRF_TIME_LIMIT'] = None
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo_app.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Initialize CSRF Protection
+# INITIALIZE SECURITY AND DATABASE COMPONENTS
 csrf = CSRFProtect(app)
+db = SQLAlchemy(app)
 
-# Add Jinja2 filter for IST conversion
+# JINJA2 TEMPLATE FILTER FOR TIMEZONE CONVERSION
 @app.template_filter('ist')
 def ist_filter(utc_datetime):
     """Template filter to convert UTC to IST"""
     return convert_utc_to_ist(utc_datetime)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo_app.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Initialize SQLAlchemy
-db = SQLAlchemy(app)
-
-# User Model
+# DATABASE MODELS
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relationship with tasks
+    # ONE-TO-MANY RELATIONSHIP: USER CAN HAVE MULTIPLE TASKS
     tasks = db.relationship('Task', backref='user', lazy=True, cascade='all, delete-orphan')
     
     def set_password(self, password):
@@ -63,7 +59,6 @@ class User(db.Model):
     def __repr__(self):
         return f'<User {self.username}>'
 
-# Task Model  
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
@@ -76,7 +71,7 @@ class Task(db.Model):
     def __repr__(self):
         return f'<Task {self.title}>'
 
-# Helper Functions
+# VALIDATION UTILITIES
 def validate_password(password):
     """Validate password strength"""
     if len(password) < 8:
@@ -99,6 +94,7 @@ def validate_username(username):
         return False, "Username can only contain letters, numbers, and underscores"
     return True, "Username is valid"
 
+# AUTHENTICATION DECORATOR FOR PROTECTED ROUTES
 def login_required(f):
     """Decorator to require login for certain routes"""
     from functools import wraps
@@ -110,7 +106,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# Routes
+# APPLICATION ROUTES
 @app.route('/')
 def index():
     """Home page - redirect to dashboard if logged in, otherwise show welcome"""
@@ -129,7 +125,7 @@ def register():
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
         
-        # Validation
+        # INPUT VALIDATION PIPELINE
         if not username:
             flash('Username is required.', 'error')
             return render_template('register.html')
@@ -138,29 +134,24 @@ def register():
             flash('Password is required.', 'error')
             return render_template('register.html')
         
-        # Validate username
         username_valid, username_msg = validate_username(username)
         if not username_valid:
             flash(username_msg, 'error')
             return render_template('register.html')
         
-        # Validate password
         password_valid, password_msg = validate_password(password)
         if not password_valid:
             flash(password_msg, 'error')
             return render_template('register.html')
         
-        # Check password confirmation
         if password != confirm_password:
             flash('Passwords do not match.', 'error')
             return render_template('register.html')
         
-        # Check if username already exists
+        # ENSURE USERNAME UNIQUENESS
         if User.query.filter_by(username=username).first():
             flash('Username already exists. Please choose a different one.', 'error')
             return render_template('register.html')
-        
-        # Create new user
         try:
             user = User(username=username)
             user.set_password(password)
@@ -186,12 +177,11 @@ def login():
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         
-        # Validation
         if not username or not password:
             flash('Username and password are required.', 'error')
             return render_template('login.html')
         
-        # Find user and verify password
+        # AUTHENTICATE USER WITH DATABASE LOOKUP
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
             session['user_id'] = user.id
@@ -222,19 +212,16 @@ def dashboard():
         flash('User not found. Please log in again.', 'error')
         return redirect(url_for('login'))
     
-    # Get search filter
+    # TASK FILTERING AND SEARCH FUNCTIONALITY
     search_query = request.args.get('search', '').strip()
-    
-    # Build query - always get all tasks for this user
     tasks_query = Task.query.filter_by(user_id=user.id)
     
     if search_query:
         tasks_query = tasks_query.filter(Task.title.contains(search_query))
     
-    # Get all tasks (both completed and incomplete)
     tasks = tasks_query.order_by(Task.created_at.desc()).all()
     
-    # Statistics
+    # DASHBOARD STATISTICS CALCULATION
     total_tasks = len(tasks) if search_query else Task.query.filter_by(user_id=user.id).count()
     completed_tasks = len([t for t in tasks if t.completed])
     incomplete_tasks = total_tasks - completed_tasks
@@ -255,7 +242,7 @@ def add_task():
     title = request.form.get('title', '').strip()
     description = request.form.get('description', '').strip()
     
-    # Validation
+    # TASK INPUT VALIDATION
     if not title:
         flash('Task title is required.', 'error')
         return redirect(url_for('dashboard'))
@@ -267,8 +254,6 @@ def add_task():
     if len(description) > 200:
         flash('Task description must be less than 200 characters.', 'error')
         return redirect(url_for('dashboard'))
-    
-    # Create new task
     try:
         task = Task(
             title=title,
@@ -290,7 +275,7 @@ def edit_task(task_id):
     """Edit an existing task"""
     task = Task.query.get_or_404(task_id)
     
-    # Check if task belongs to current user
+    # AUTHORIZATION: ENSURE USER OWNS THE TASK
     if task.user_id != session['user_id']:
         flash('You can only edit your own tasks.', 'error')
         return redirect(url_for('dashboard'))
@@ -299,7 +284,7 @@ def edit_task(task_id):
         title = request.form.get('title', '').strip()
         description = request.form.get('description', '').strip()
         
-        # Validation
+        # VALIDATE EDITED TASK DATA
         if not title:
             flash('Task title is required.', 'error')
             return render_template('edit_task.html', task=task, convert_utc_to_ist=convert_utc_to_ist)
@@ -311,8 +296,6 @@ def edit_task(task_id):
         if len(description) > 200:
             flash('Task description must be less than 200 characters.', 'error')
             return render_template('edit_task.html', task=task, convert_utc_to_ist=convert_utc_to_ist)
-        
-        # Update task
         try:
             task.title = title
             task.description = description
@@ -332,7 +315,7 @@ def toggle_task(task_id):
     """Toggle task completion status"""
     task = Task.query.get_or_404(task_id)
     
-    # Check if task belongs to current user
+    # AUTHORIZATION CHECK FOR TASK OWNERSHIP
     if task.user_id != session['user_id']:
         flash('You can only modify your own tasks.', 'error')
         return redirect(url_for('dashboard'))
@@ -356,7 +339,7 @@ def delete_task(task_id):
     """Delete a task"""
     task = Task.query.get_or_404(task_id)
     
-    # Check if task belongs to current user
+    # AUTHORIZATION CHECK FOR TASK DELETION
     if task.user_id != session['user_id']:
         flash('You can only delete your own tasks.', 'error')
         return redirect(url_for('dashboard'))
@@ -371,7 +354,7 @@ def delete_task(task_id):
     
     return redirect(url_for('dashboard'))
 
-# Error Handlers
+# HTTP ERROR HANDLERS
 @app.errorhandler(404)
 def not_found_error(error):
     return render_template('404.html'), 404
@@ -381,7 +364,7 @@ def internal_error(error):
     db.session.rollback()
     return render_template('500.html'), 500
 
-# Initialize database
+# DATABASE INITIALIZATION
 def init_db():
     """Initialize the database"""
     with app.app_context():
@@ -389,8 +372,6 @@ def init_db():
         print("Database initialized successfully!")
 
 if __name__ == '__main__':
-    # Create tables if they don't exist
+    # APPLICATION STARTUP SEQUENCE
     init_db()
-    
-    # Run the app
     app.run(debug=True, host='0.0.0.0', port=5000)

@@ -3,7 +3,7 @@
 {% block title %}Dashboard - Todo List{% endblock %}
 
 {% block content %}
-<!-- Simple Header -->
+<!-- DASHBOARD HEADER WITH USER STATS -->
 <div class="row mb-4">
     <div class="col-12">
         <h2 class="text-white mb-3">Hello, {{ user.username }}!</h2>
@@ -24,7 +24,7 @@
     </div>
 </div>
 
-<!-- Add Task Form -->
+<!-- TASK CREATION FORM -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="simple-task-item p-4">
@@ -73,10 +73,9 @@
     </div>
 </div>
 
-<!-- Tasks List -->
+<!-- TASK MANAGEMENT INTERFACE -->
 <div class="row">
     <div class="col-12">
-        <!-- Incomplete Tasks -->
         <div class="mb-4">
             <h5 style="color: var(--accent-color); margin-bottom: 20px;">📋 Todo Items ({{ incomplete_tasks }})</h5>
             {% set incomplete_tasks_list = tasks|selectattr("completed", "equalto", false)|list %}
@@ -121,7 +120,6 @@
             {% endif %}
         </div>
 
-        <!-- Completed Tasks -->
         {% set completed_tasks_list = tasks|selectattr("completed", "equalto", true)|list %}
         {% if completed_tasks_list %}
         <div class="mb-4">
@@ -166,7 +164,7 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
+<!-- TASK DELETION CONFIRMATION MODAL -->
 <div class="modal fade" id="deleteTaskModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -204,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const deleteTaskTitle = document.getElementById('deleteTaskTitle');
     const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
     
-    // Character counter for task title
+    // CHARACTER COUNTER FOR TASK TITLE
     titleInput.addEventListener('input', function() {
         const length = this.value.length;
         titleCounter.textContent = length;
@@ -218,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Character counter for description
+    // CHARACTER COUNTER FOR DESCRIPTION
     const descriptionCounter = document.getElementById('descriptionCounter');
     descriptionInput.addEventListener('input', function() {
         const length = this.value.length;
@@ -232,19 +230,19 @@ document.addEventListener('DOMContentLoaded', function() {
             descriptionCounter.className = 'text-muted';
         }
         
-        // Auto-resize textarea
+        // AUTO-RESIZE TEXTAREA
         this.style.height = 'auto';
         this.style.height = (this.scrollHeight) + 'px';
     });
     
-    // Delete task confirmation
+    // DELETE TASK CONFIRMATION
     document.querySelectorAll('.delete-task-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const taskId = this.dataset.taskId;
             const taskTitle = this.dataset.taskTitle;
             
             deleteTaskTitle.textContent = taskTitle;
-            // Create form for POST delete
+            // DYNAMIC FORM CREATION FOR SECURE DELETE
             const deleteForm = document.createElement('form');
             deleteForm.method = 'POST';
             deleteForm.action = `/delete_task/${taskId}`;
@@ -263,12 +261,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Form validation
+    // FORM VALIDATION
     addTaskForm.addEventListener('submit', function(e) {
         const title = titleInput.value.trim();
         const description = descriptionInput.value.trim();
         
-        // Check title
+        // CHECK TITLE
         if (!title) {
             e.preventDefault();
             titleInput.focus();
@@ -279,7 +277,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
         
-        // Check title length
+        // CHECK TITLE LENGTH
         if (title.length > 200) {
             e.preventDefault();
             titleInput.focus();
@@ -290,7 +288,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
         
-        // Check description length
+        // CHECK DESCRIPTION LENGTH
         if (description.length > 200) {
             e.preventDefault();
             descriptionInput.focus();
@@ -302,15 +300,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Focus input field on page load
+    // FOCUS INPUT FIELD ON PAGE LOAD
     titleInput.focus();
     
-    // Clear validation styling on input
+    // CLEAR VALIDATION STYLING ON INPUT
     titleInput.addEventListener('input', function() {
         this.style.borderColor = '';
     });
     
-    // Better form submission with Enter
+    // BETTER FORM SUBMISSION WITH ENTER
     titleInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -318,7 +316,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Allow Shift+Enter for new line in description, Enter to submit form
+    // ALLOW SHIFT+ENTER FOR NEW LINE IN DESCRIPTION, ENTER TO SUBMIT FORM
     descriptionInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
