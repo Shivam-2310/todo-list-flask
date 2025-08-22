@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Task - Todo List{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{{ url_for('dashboard') }}" class="text-decoration-none">
+                        <i class="bi bi-house me-1"></i>Dashboard
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Edit Task</li>
+            </ol>
+        </nav>
+        
+        <!-- Edit Task Form -->
+        <div class="card card-custom fade-in">
+            <div class="card-header bg-transparent border-0">
+                <h3 class="card-title mb-0">
+                    <i class="bi bi-pencil-square me-2" style="color: var(--accent-color);"></i>
+                    Edit Task
+                </h3>
+            </div>
+            
+            <div class="card-body p-4">
+                <form method="POST" id="editTaskForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <!-- Task Title -->
+                    <div class="mb-4">
+                        <label for="title" class="form-label fw-semibold">
+                            <i class="bi bi-card-text me-2"></i>Task Title
+                        </label>
+                        <input type="text" 
+                               class="form-control form-control-custom" 
+                               id="title" 
+                               name="title" 
+                               value="{{ task.title }}" 
+                               required 
+                               maxlength="200"
+                               placeholder="What do you need to do?"
+                               autocomplete="off"
+                               autofocus>
+                        <div class="form-text">
+                            <span id="titleCounter">{{ task.title|length }}</span>/200 characters
+                        </div>
+                    </div>
+                    
+                    <!-- Task Description -->
+                    <div class="mb-4">
+                        <label for="description" class="form-label fw-semibold">
+                            <i class="bi bi-file-text me-2"></i>Description (Optional)
+                        </label>
+                        <textarea class="form-control form-control-custom" 
+                                  id="description" 
+                                  name="description" 
+                                  rows="4" 
+                                  maxlength="200"
+                                  placeholder="Add more details about your task..."
+                                  style="resize: vertical;">{{ task.description or '' }}</textarea>
+                        <div class="form-text">
+                            <span id="descriptionCounter">{{ (task.description or '')|length }}</span>/200 characters
+                        </div>
+                    </div>
+                    
+                    <!-- Task Status -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-check-circle me-2"></i>Task Status
+                        </label>
+                        <div class="card" style="background-color: {% if task.completed %}rgba(40, 167, 69, 0.1){% else %}rgba(255, 193, 7, 0.1){% endif %};">
+                            <div class="card-body py-3">
+                                <div class="d-flex align-items-center">
+                                    {% if task.completed %}
+                                        <i class="bi bi-check-circle-fill text-success me-3" style="font-size: 1.5rem;"></i>
+                                        <div>
+                                            <strong class="text-success">Completed</strong>
+                                            <div class="text-muted small">This task has been marked as completed</div>
+                                        </div>
+                                    {% else %}
+                                        <i class="bi bi-clock text-warning me-3" style="font-size: 1.5rem;"></i>
+                                        <div>
+                                            <strong class="text-warning">In Progress</strong>
+                                            <div class="text-muted small">This task is still pending completion</div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Task Metadata -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-info-circle me-2"></i>Task Information
+                        </label>
+                        <div class="card bg-light">
+                            <div class="card-body py-3">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <small class="text-muted d-block">Created</small>
+                                        <strong>{{ (task.created_at | ist).strftime('%B %d, %Y at %I:%M %p IST') }}</strong>
+                                    </div>
+                                    {% if task.updated_at != task.created_at %}
+                                        <div class="col-md-6">
+                                            <small class="text-muted d-block">Last Updated</small>
+                                            <strong>{{ (task.updated_at | ist).strftime('%B %d, %Y at %I:%M %p IST') }}</strong>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="submit" class="btn btn-custom-primary">
+                            <i class="bi bi-check-lg me-2"></i>
+                            <span id="saveButtonText">Save Changes</span>
+                            <span id="saveButtonSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </span>
+                        </button>
+                        
+                        <a href="{{ url_for('toggle_task', task_id=task.id) }}" 
+                           class="btn {% if task.completed %}btn-outline-warning{% else %}btn-outline-success{% endif %}">
+                            <i class="bi {% if task.completed %}bi-arrow-counterclockwise{% else %}bi-check-lg{% endif %} me-2"></i>
+                            {% if task.completed %}Mark as Incomplete{% else %}Mark as Complete{% endif %}
+                        </a>
+                        
+                        <button type="button" 
+                                class="btn btn-outline-danger" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#deleteTaskModal">
+                            <i class="bi bi-trash me-2"></i>
+                            Delete Task
+                        </button>
+                        
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteTaskModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                    Confirm Delete
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">Are you sure you want to delete the task "<strong>{{ task.title }}</strong>"?</p>
+                <p class="text-muted small mt-2 mb-0">This action cannot be undone and you will be redirected to your dashboard.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="{{ url_for('delete_task', task_id=task.id) }}" class="btn btn-custom-danger">
+                    <i class="bi bi-trash me-2"></i>
+                    Delete Task
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const titleInput = document.getElementById('title');
+    const titleCounter = document.getElementById('titleCounter');
+    const descriptionTextarea = document.getElementById('description');
+    const descriptionCounter = document.getElementById('descriptionCounter');
+    const editTaskForm = document.getElementById('editTaskForm');
+    const saveButton = editTaskForm.querySelector('button[type="submit"]');
+    const saveButtonText = document.getElementById('saveButtonText');
+    const saveButtonSpinner = document.getElementById('saveButtonSpinner');
+    
+    // Character counter for task title
+    titleInput.addEventListener('input', function() {
+        const length = this.value.length;
+        titleCounter.textContent = length;
+        
+        if (length > 180) {
+            titleCounter.className = 'text-danger';
+        } else if (length > 150) {
+            titleCounter.className = 'text-warning';
+        } else {
+            titleCounter.className = 'text-muted';
+        }
+    });
+    
+    // Character counter for description
+    descriptionTextarea.addEventListener('input', function() {
+        const length = this.value.length;
+        descriptionCounter.textContent = length;
+        
+        if (length > 180) {
+            descriptionCounter.className = 'text-danger';
+        } else if (length > 150) {
+            descriptionCounter.className = 'text-warning';
+        } else {
+            descriptionCounter.className = 'text-muted';
+        }
+    });
+    
+    // Auto-resize textarea
+    function autoResize() {
+        descriptionTextarea.style.height = 'auto';
+        descriptionTextarea.style.height = descriptionTextarea.scrollHeight + 'px';
+    }
+    
+    // Initial resize
+    autoResize();
+    
+    descriptionTextarea.addEventListener('input', autoResize);
+    
+    // Form submission handler
+    editTaskForm.addEventListener('submit', function(e) {
+        const title = titleInput.value.trim();
+        
+        if (!title) {
+            e.preventDefault();
+            titleInput.focus();
+            titleInput.classList.add('is-invalid');
+            setTimeout(() => titleInput.classList.remove('is-invalid'), 3000);
+            return;
+        }
+        
+        // Show loading state
+        saveButton.disabled = true;
+        saveButtonText.textContent = 'Saving...';
+        saveButtonSpinner.classList.remove('d-none');
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl+S to save
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            editTaskForm.submit();
+        }
+        
+        // Escape to cancel
+        if (e.key === 'Escape') {
+            window.location.href = "{{ url_for('dashboard') }}";
+        }
+    });
+    
+    // Warn before leaving with unsaved changes
+    let formChanged = false;
+    const originalTitle = "{{ task.title }}";
+    const originalDescription = "{{ task.description or '' }}";
+    
+    function checkFormChanges() {
+        const currentTitle = titleInput.value;
+        const currentDescription = descriptionTextarea.value;
+        
+        formChanged = (currentTitle !== originalTitle || currentDescription !== originalDescription);
+    }
+    
+    titleInput.addEventListener('input', checkFormChanges);
+    descriptionTextarea.addEventListener('input', checkFormChanges);
+    
+    window.addEventListener('beforeunload', function(e) {
+        if (formChanged) {
+            e.preventDefault();
+            e.returnValue = '';
+            return 'You have unsaved changes. Are you sure you want to leave?';
+        }
+    });
+    
+    // Don't show warning when form is submitted
+    editTaskForm.addEventListener('submit', function() {
+        formChanged = false;
+    });
+    
+    // Focus title input and select text for easy editing
+    titleInput.focus();
+    titleInput.select();
+});
+</script>
+{% endblock %}
